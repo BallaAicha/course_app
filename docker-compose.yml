@@ -1,0 +1,63 @@
+services:
+  mysql:
+    container_name: ms_mysql
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: ousmane
+      MYSQL_DATABASE: course-app
+    volumes:
+      - mysql:/var/lib/mysql
+    ports:
+      - 3306:3306
+    networks:
+      - course-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      retries: 5
+
+  course-app:
+    image: course-app:latest
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://ms_mysql:3306/course-app
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ousmane
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_JPA_SHOW_SQL: "true"
+      SPRING_JPA_DATABASE: mysql
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.MySQLDialect
+      SPRING_JPA_PROPERTIES_HIBERNATE_JDBC_LOB_NON_CONTEXTUAL_CREATION: "true"
+      SPRING_FLYWAY_BASELINE_ON_MIGRATE: "true"
+      SPRING_FLYWAY_ENABLED: "true"
+      SPRING_FLYWAY_BASELINE_DESCRIPTION: Initial version
+      SPRING_FLYWAY_BASELINE_VERSION: 0
+      SPRING_FLYWAY_USER: root
+      SPRING_FLYWAY_PASSWORD: ousmane
+      SERVER_PORT: 8080
+    ports:
+      - 8080:8080
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - course-net
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    environment:
+      PMA_HOST: ms_mysql
+      MYSQL_ROOT_PASSWORD: ousmane
+    ports:
+      - 8081:80
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - course-net
+
+networks:
+  course-net:
+    driver: bridge
+
+volumes:
+  mysql:
